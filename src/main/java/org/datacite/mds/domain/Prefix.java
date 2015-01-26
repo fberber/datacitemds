@@ -2,33 +2,30 @@ package org.datacite.mds.domain;
 
 import java.util.Date;
 import java.util.List;
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.EntityManager;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.PersistenceContext;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
+import javax.persistence.TypedQuery;
 import javax.persistence.Version;
 import javax.validation.constraints.NotNull;
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlTransient;
-
 import org.datacite.mds.util.Utils;
 import org.datacite.mds.validation.constraints.DoiPrefix;
 import org.datacite.mds.validation.constraints.Unique;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
-import org.springframework.roo.addon.entity.RooEntity;
-import org.springframework.roo.addon.javabean.RooJavaBean;
-import org.springframework.roo.addon.tostring.RooToString;
 import org.springframework.transaction.annotation.Transactional;
 
-@RooJavaBean
-@RooToString
-@RooEntity(finders = { "findPrefixesByPrefixLike" })
+@Configurable
 @Unique(field = "prefix")
 @Entity
 @XmlRootElement
@@ -159,5 +156,70 @@ public class Prefix implements Comparable<Prefix>{
         if (cmp == 0)
             cmp = prefix1.compareTo(prefix2);
         return cmp;
+    }
+
+	public static TypedQuery<Prefix> findPrefixesByPrefixLike(String prefix) {
+        if (prefix == null || prefix.length() == 0) throw new IllegalArgumentException("The prefix argument is required");
+        EntityManager em = Prefix.entityManager();
+        TypedQuery<Prefix> q = em.createQuery("SELECT o FROM Prefix AS o WHERE LOWER(o.prefix) LIKE LOWER(:prefix)", Prefix.class);
+        q.setParameter("prefix", prefix);
+        return q;
+    }
+
+	@PersistenceContext
+    transient EntityManager entityManager;
+
+	@Transactional
+    public void remove() {
+        if (this.entityManager == null) this.entityManager = entityManager();
+        if (this.entityManager.contains(this)) {
+            this.entityManager.remove(this);
+        } else {
+            Prefix attached = Prefix.findPrefix(this.id);
+            this.entityManager.remove(attached);
+        }
+    }
+
+	@Transactional
+    public void flush() {
+        if (this.entityManager == null) this.entityManager = entityManager();
+        this.entityManager.flush();
+    }
+
+	@Transactional
+    public void clear() {
+        if (this.entityManager == null) this.entityManager = entityManager();
+        this.entityManager.clear();
+    }
+
+	@Transactional
+    public Prefix merge() {
+        if (this.entityManager == null) this.entityManager = entityManager();
+        Prefix merged = this.entityManager.merge(this);
+        this.entityManager.flush();
+        return merged;
+    }
+
+	public static final EntityManager entityManager() {
+        EntityManager em = new Prefix().entityManager;
+        if (em == null) throw new IllegalStateException("Entity manager has not been injected (is the Spring Aspects JAR configured as an AJC/AJDT aspects library?)");
+        return em;
+    }
+
+	public static long countPrefixes() {
+        return entityManager().createQuery("SELECT COUNT(o) FROM Prefix o", Long.class).getSingleResult();
+    }
+
+	public static Prefix findPrefix(Long id) {
+        if (id == null) return null;
+        return entityManager().find(Prefix.class, id);
+    }
+
+	public String getPrefix() {
+        return this.prefix;
+    }
+
+	public void setPrefix(String prefix) {
+        this.prefix = prefix;
     }
 }

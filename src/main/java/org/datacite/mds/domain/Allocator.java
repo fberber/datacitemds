@@ -4,18 +4,24 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
-
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.EntityManager;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.OrderBy;
+import javax.persistence.PersistenceContext;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.TypedQuery;
+import javax.persistence.Version;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
 import org.apache.commons.lang.StringUtils;
@@ -25,16 +31,13 @@ import org.datacite.mds.util.Utils;
 import org.datacite.mds.validation.constraints.Email;
 import org.datacite.mds.validation.constraints.Symbol;
 import org.datacite.mds.validation.constraints.Unique;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
-import org.springframework.roo.addon.entity.RooEntity;
-import org.springframework.roo.addon.javabean.RooJavaBean;
-import org.springframework.roo.addon.tostring.RooToString;
 import org.springframework.transaction.annotation.Transactional;
 
-@RooJavaBean
-@RooToString
-@RooEntity(finders = { "findAllocatorsBySymbolEquals", "findAllocatorsByNameLike" })
+@Configurable
+@Entity
 @Unique(field = "symbol")
 public class Allocator implements AllocatorOrDatacentre {
 
@@ -188,5 +191,194 @@ public class Allocator implements AllocatorOrDatacentre {
     @Override
     public String toString() {
         return getSymbol() + " (id=" + getId() + ")";
+    }
+
+	public String getSymbol() {
+        return this.symbol;
+    }
+
+	public void setSymbol(String symbol) {
+        this.symbol = symbol;
+    }
+
+	public String getPassword() {
+        return this.password;
+    }
+
+	public void setPassword(String password) {
+        this.password = password;
+    }
+
+	public String getName() {
+        return this.name;
+    }
+
+	public String getContactName() {
+        return this.contactName;
+    }
+
+	public void setContactName(String contactName) {
+        this.contactName = contactName;
+    }
+
+	public String getContactEmail() {
+        return this.contactEmail;
+    }
+
+	public Integer getDoiQuotaAllowed() {
+        return this.doiQuotaAllowed;
+    }
+
+	public void setDoiQuotaAllowed(Integer doiQuotaAllowed) {
+        this.doiQuotaAllowed = doiQuotaAllowed;
+    }
+
+	public Integer getDoiQuotaUsed() {
+        return this.doiQuotaUsed;
+    }
+
+	public void setDoiQuotaUsed(Integer doiQuotaUsed) {
+        this.doiQuotaUsed = doiQuotaUsed;
+    }
+
+	public Set<Prefix> getPrefixes() {
+        return this.prefixes;
+    }
+
+	public void setPrefixes(Set<Prefix> prefixes) {
+        this.prefixes = prefixes;
+    }
+
+	public Boolean getIsActive() {
+        return this.isActive;
+    }
+
+	public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
+
+	public String getRoleName() {
+        return this.roleName;
+    }
+
+	public void setRoleName(String roleName) {
+        this.roleName = roleName;
+    }
+
+	public String getComments() {
+        return this.comments;
+    }
+
+	public void setComments(String comments) {
+        this.comments = comments;
+    }
+
+	public Date getCreated() {
+        return this.created;
+    }
+
+	public void setCreated(Date created) {
+        this.created = created;
+    }
+
+	public Date getUpdated() {
+        return this.updated;
+    }
+
+	public void setUpdated(Date updated) {
+        this.updated = updated;
+    }
+
+	public void setExperiments(String experiments) {
+        this.experiments = experiments;
+    }
+
+	@PersistenceContext
+    transient EntityManager entityManager;
+
+	@Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id")
+    private Long id;
+
+	@Version
+    @Column(name = "version")
+    private Integer version;
+
+	public Long getId() {
+        return this.id;
+    }
+
+	public void setId(Long id) {
+        this.id = id;
+    }
+
+	public Integer getVersion() {
+        return this.version;
+    }
+
+	public void setVersion(Integer version) {
+        this.version = version;
+    }
+
+	@Transactional
+    public void remove() {
+        if (this.entityManager == null) this.entityManager = entityManager();
+        if (this.entityManager.contains(this)) {
+            this.entityManager.remove(this);
+        } else {
+            Allocator attached = Allocator.findAllocator(this.id);
+            this.entityManager.remove(attached);
+        }
+    }
+
+	@Transactional
+    public void flush() {
+        if (this.entityManager == null) this.entityManager = entityManager();
+        this.entityManager.flush();
+    }
+
+	@Transactional
+    public void clear() {
+        if (this.entityManager == null) this.entityManager = entityManager();
+        this.entityManager.clear();
+    }
+
+	public static final EntityManager entityManager() {
+        EntityManager em = new Allocator().entityManager;
+        if (em == null) throw new IllegalStateException("Entity manager has not been injected (is the Spring Aspects JAR configured as an AJC/AJDT aspects library?)");
+        return em;
+    }
+
+	public static long countAllocators() {
+        return entityManager().createQuery("SELECT COUNT(o) FROM Allocator o", Long.class).getSingleResult();
+    }
+
+	public static Allocator findAllocator(Long id) {
+        if (id == null) return null;
+        return entityManager().find(Allocator.class, id);
+    }
+
+	public static TypedQuery<Allocator> findAllocatorsByNameLike(String name) {
+        if (name == null || name.length() == 0) throw new IllegalArgumentException("The name argument is required");
+        name = name.replace('*', '%');
+        if (name.charAt(0) != '%') {
+            name = "%" + name;
+        }
+        if (name.charAt(name.length() - 1) != '%') {
+            name = name + "%";
+        }
+        EntityManager em = Allocator.entityManager();
+        TypedQuery<Allocator> q = em.createQuery("SELECT o FROM Allocator AS o WHERE LOWER(o.name) LIKE LOWER(:name)", Allocator.class);
+        q.setParameter("name", name);
+        return q;
+    }
+
+	public static TypedQuery<Allocator> findAllocatorsBySymbolEquals(String symbol) {
+        if (symbol == null || symbol.length() == 0) throw new IllegalArgumentException("The symbol argument is required");
+        EntityManager em = Allocator.entityManager();
+        TypedQuery<Allocator> q = em.createQuery("SELECT o FROM Allocator AS o WHERE o.symbol = :symbol", Allocator.class);
+        q.setParameter("symbol", symbol);
+        return q;
     }
 }

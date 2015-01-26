@@ -1,11 +1,12 @@
 package org.datacite.mds.web.ui.controller;
 
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-
 import org.datacite.mds.domain.Dataset;
 import org.datacite.mds.domain.Metadata;
 import org.datacite.mds.service.SecurityException;
@@ -16,7 +17,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.roo.addon.web.mvc.controller.RooWebScaffold;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -28,8 +28,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.support.ByteArrayMultipartFileEditor;
+import org.springframework.web.util.UriUtils;
+import org.springframework.web.util.WebUtils;
 
-@RooWebScaffold(path = "metadatas", formBackingObject = Metadata.class, delete = false, update = false, populateMethods = false)
 @RequestMapping("/metadatas")
 @Controller
 public class MetadataController implements UiController {
@@ -91,5 +92,28 @@ public class MetadataController implements UiController {
     @RequestMapping(method = RequestMethod.GET)
     public String list() {
         return "index";
+    }
+
+	@RequestMapping(params = "form", method = RequestMethod.GET)
+    public String createForm(Model uiModel) {
+        uiModel.addAttribute("metadata", new Metadata());
+        List dependencies = new ArrayList();
+        if (Dataset.countDatasets() == 0) {
+            dependencies.add(new String[]{"dataset", "datasets"});
+        }
+        uiModel.addAttribute("dependencies", dependencies);
+        return "metadatas/create";
+    }
+
+	String encodeUrlPathSegment(String pathSegment, HttpServletRequest httpServletRequest) {
+        String enc = httpServletRequest.getCharacterEncoding();
+        if (enc == null) {
+            enc = WebUtils.DEFAULT_CHARACTER_ENCODING;
+        }
+        try {
+            pathSegment = UriUtils.encodePathSegment(pathSegment, enc);
+        }
+        catch (UnsupportedEncodingException uee) {}
+        return pathSegment;
     }
 }
