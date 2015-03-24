@@ -17,6 +17,7 @@ import org.hibernate.exception.JDBCConnectionException;
 import org.springframework.orm.jpa.JpaOptimisticLockingFailureException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver;
 
@@ -37,12 +38,26 @@ import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolv
  */
 @Component
 public class ApiHandlerExceptionResolver extends DefaultHandlerExceptionResolver {
+    
+    Class<?>[] handlersClasses = { ApiController.class };
 
     public ApiHandlerExceptionResolver() {
         super();
         setOrder(HIGHEST_PRECEDENCE); // ensure this resolver is fired first
-        Class<?>[] handlers = { ApiController.class };
-        setMappedHandlerClasses(handlers); // use our API controller classes
+    }
+
+    @Override
+    protected boolean shouldApplyTo(HttpServletRequest request, Object handler) {
+        if (handler instanceof HandlerMethod) {
+            HandlerMethod hm = (HandlerMethod) handler;
+            Class clazz = hm.getMethod().getDeclaringClass();
+            for (Class<?> handlerClass : handlersClasses) {
+                if (handlerClass.isAssignableFrom(clazz)) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
