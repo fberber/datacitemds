@@ -13,6 +13,7 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.datacite.mds.service.HandleException;
 import org.datacite.mds.service.SecurityException;
 import org.datacite.mds.util.ValidationUtils;
+import org.datacite.mds.web.AbstractHandlerExceptionResolver;
 import org.hibernate.exception.JDBCConnectionException;
 import org.springframework.orm.jpa.JpaOptimisticLockingFailureException;
 import org.springframework.stereotype.Component;
@@ -37,27 +38,12 @@ import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolv
  * @see DefaultHandlerExceptionResolver
  */
 @Component
-public class ApiHandlerExceptionResolver extends DefaultHandlerExceptionResolver {
-    
-    Class<?>[] handlersClasses = { ApiController.class };
+public class ApiHandlerExceptionResolver extends AbstractHandlerExceptionResolver {
 
     public ApiHandlerExceptionResolver() {
         super();
         setOrder(HIGHEST_PRECEDENCE); // ensure this resolver is fired first
-    }
-
-    @Override
-    protected boolean shouldApplyTo(HttpServletRequest request, Object handler) {
-        if (handler instanceof HandlerMethod) {
-            HandlerMethod hm = (HandlerMethod) handler;
-            Class clazz = hm.getMethod().getDeclaringClass();
-            for (Class<?> handlerClass : handlersClasses) {
-                if (handlerClass.isAssignableFrom(clazz)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        handlersClasses = new Class<?>[] { ApiController.class };
     }
 
     @Override
