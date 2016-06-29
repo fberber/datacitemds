@@ -1,0 +1,13 @@
+version: '2'
+
+services:
+  mds:
+    env_file: .env
+    image: datacite/mds
+    ports:
+      - "8080:8080"
+  db:
+    env_file: .env
+    image: mysql:5.6
+    ports:
+      - "3307:3306"

@@ -1,0 +1,6 @@
+salt.password={{ .Env.SALT_PASSWORD }}
+salt.magicAuthString={{ .Env.SALT_MAGICAUTH }}
+salt.rememberMe={{ .Env.SALT_PASSWORD }}
+
+# days a change password link is valid
+magicAuthString.validityInDays=7

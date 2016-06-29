@@ -1,0 +1,24 @@
+handle.index=300
+handle.id={{ .Env.HANDLE_ID }}
+handle.password={{ .Env.HANDLE_PASSWORD }}
+handle.traceMessages=true
+handle.dummyMode=false
+handle.testPrefix=10.5072
+
+#number of days after which a test dataset marked for deletion
+#negative number disables automatic purging
+handle.testPrefix.expiration.days=-1
+
+#cron expression for purging test prefix
+#example: "0 0 0 * * ?" means at midnight every day
+handle.testPrefix.expiration.cron=0 0 0 * * ?
+
+#always allow these domains in URLs regardless of datacentres settings
+#same syntax as for datacentre domain list (csv, wildcard support, subdomains included)
+handle.alwaysAllowedDomains=*.org
+
+#Does metadata for a given DOIs have to exist before minting DOIs?
+handle.metadataRequired=false
+
+#the server to ping for status check; separate multiple server by space
+handle.pingServer={{ .Env.HANDLE_PING }}
