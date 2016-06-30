@@ -1,17 +1,17 @@
 package org.datacite.mds.web.ui.controller;
 
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-
 import org.apache.commons.lang.StringUtils;
 import org.datacite.mds.domain.Dataset;
 import org.datacite.mds.domain.Media;
 import org.datacite.mds.service.SecurityException;
 import org.datacite.mds.util.SecurityUtils;
-import org.springframework.roo.addon.web.mvc.controller.RooWebScaffold;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -20,8 +20,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.util.UriUtils;
+import org.springframework.web.util.WebUtils;
 
-@RooWebScaffold(path = "medias", formBackingObject = Media.class, populateMethods = false, delete=false)
 @RequestMapping("/medias")
 @Controller
 public class MediaController {
@@ -78,4 +79,39 @@ public class MediaController {
         return "index";
     }
 
+
+	@RequestMapping(params = "form", method = RequestMethod.GET)
+    public String createForm(Model uiModel) {
+        uiModel.addAttribute("media", new Media());
+        List dependencies = new ArrayList();
+        if (Dataset.countDatasets() == 0) {
+            dependencies.add(new String[]{"dataset", "datasets"});
+        }
+        uiModel.addAttribute("dependencies", dependencies);
+        return "medias/create";
+    }
+
+	String encodeUrlPathSegment(String pathSegment, HttpServletRequest httpServletRequest) {
+        String enc = httpServletRequest.getCharacterEncoding();
+        if (enc == null) {
+            enc = WebUtils.DEFAULT_CHARACTER_ENCODING;
+        }
+        try {
+            pathSegment = UriUtils.encodePathSegment(pathSegment, enc);
+        }
+        catch (UnsupportedEncodingException uee) {}
+        return pathSegment;
+    }
+
+	@RequestMapping(params = { "find=ByDataset", "form" }, method = RequestMethod.GET)
+    public String findMediasByDatasetForm(Model uiModel) {
+        uiModel.addAttribute("datasets", Dataset.findAllDatasets());
+        return "medias/findMediasByDataset";
+    }
+
+	@RequestMapping(params = "find=ByDataset", method = RequestMethod.GET)
+    public String findMediasByDataset(@RequestParam("dataset") Dataset dataset, Model uiModel) {
+        uiModel.addAttribute("medias", Media.findMediasByDataset(dataset).getResultList());
+        return "medias/list";
+    }
 }

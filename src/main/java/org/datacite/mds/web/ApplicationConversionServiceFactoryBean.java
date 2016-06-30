@@ -9,7 +9,6 @@ import org.springframework.core.convert.converter.Converter;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.format.support.FormattingConversionServiceFactoryBean;
 
-//@RooConversionService
 //(disabled due to https://jira.springsource.org/browse/ROO-2593
 public class ApplicationConversionServiceFactoryBean extends FormattingConversionServiceFactoryBean {
     

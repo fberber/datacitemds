@@ -13,10 +13,12 @@ import org.apache.commons.lang.exception.ExceptionUtils;
 import org.datacite.mds.service.HandleException;
 import org.datacite.mds.service.SecurityException;
 import org.datacite.mds.util.ValidationUtils;
+import org.datacite.mds.web.AbstractHandlerExceptionResolver;
 import org.hibernate.exception.JDBCConnectionException;
 import org.springframework.orm.jpa.JpaOptimisticLockingFailureException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.MissingServletRequestParameterException;
+import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver;
 
@@ -36,13 +38,12 @@ import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolv
  * @see DefaultHandlerExceptionResolver
  */
 @Component
-public class ApiHandlerExceptionResolver extends DefaultHandlerExceptionResolver {
+public class ApiHandlerExceptionResolver extends AbstractHandlerExceptionResolver {
 
     public ApiHandlerExceptionResolver() {
         super();
         setOrder(HIGHEST_PRECEDENCE); // ensure this resolver is fired first
-        Class<?>[] handlers = { ApiController.class };
-        setMappedHandlerClasses(handlers); // use our API controller classes
+        handlersClasses = new Class<?>[] { ApiController.class };
     }
 
     @Override
@@ -104,7 +105,7 @@ public class ApiHandlerExceptionResolver extends DefaultHandlerExceptionResolver
     
     @Override
     protected ModelAndView handleMissingServletRequestParameter(MissingServletRequestParameterException ex,
-            HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+            HttpServletRequest request, HttpServletResponse response, Object handler) throws IOException {
         response.sendError(HttpServletResponse.SC_BAD_REQUEST, ex.getMessage());
         return new ModelAndView();
     }

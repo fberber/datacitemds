@@ -2,21 +2,25 @@ package org.datacite.mds.domain;
 
 import java.util.Date;
 import java.util.List;
-
 import javax.persistence.Column;
+import javax.persistence.Entity;
 import javax.persistence.EntityManager;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
+import javax.persistence.PersistenceContext;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 import javax.persistence.Transient;
 import javax.persistence.TypedQuery;
+import javax.persistence.Version;
 import javax.validation.GroupSequence;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
-
 import org.apache.log4j.Logger;
 import org.datacite.mds.util.Constants;
 import org.datacite.mds.util.Utils;
@@ -25,16 +29,13 @@ import org.datacite.mds.validation.constraints.MatchDoiPrefix;
 import org.datacite.mds.validation.constraints.MatchDomain;
 import org.datacite.mds.validation.constraints.URL;
 import org.datacite.mds.validation.constraints.Unique;
+import org.springframework.beans.factory.annotation.Configurable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.format.annotation.DateTimeFormat.ISO;
-import org.springframework.roo.addon.entity.RooEntity;
-import org.springframework.roo.addon.javabean.RooJavaBean;
-import org.springframework.roo.addon.tostring.RooToString;
 import org.springframework.transaction.annotation.Transactional;
 
-@RooJavaBean
-@RooToString
-@RooEntity(finders = { "findDatasetsByDoiEquals" })
+@Entity
+@Configurable
 @Doi
 @MatchDoiPrefix(groups = Dataset.SecondLevelConstraint.class)
 @MatchDomain(groups = Dataset.SecondLevelConstraint.class)
@@ -202,4 +203,170 @@ public class Dataset {
     }
     
     public interface SecondLevelConstraint {};
+
+	public String getDoi() {
+        return this.doi;
+    }
+
+	public Boolean getIsActive() {
+        return this.isActive;
+    }
+
+	public void setIsActive(Boolean isActive) {
+        this.isActive = isActive;
+    }
+
+	public Boolean getIsRefQuality() {
+        return this.isRefQuality;
+    }
+
+	public void setIsRefQuality(Boolean isRefQuality) {
+        this.isRefQuality = isRefQuality;
+    }
+
+	public Integer getLastLandingPageStatus() {
+        return this.lastLandingPageStatus;
+    }
+
+	public void setLastLandingPageStatus(Integer lastLandingPageStatus) {
+        this.lastLandingPageStatus = lastLandingPageStatus;
+    }
+
+	public Date getLastLandingPageStatusCheck() {
+        return this.lastLandingPageStatusCheck;
+    }
+
+	public void setLastLandingPageStatusCheck(Date lastLandingPageStatusCheck) {
+        this.lastLandingPageStatusCheck = lastLandingPageStatusCheck;
+    }
+
+	public String getLastMetadataStatus() {
+        return this.lastMetadataStatus;
+    }
+
+	public void setLastMetadataStatus(String lastMetadataStatus) {
+        this.lastMetadataStatus = lastMetadataStatus;
+    }
+
+	public Datacentre getDatacentre() {
+        return this.datacentre;
+    }
+
+	public void setDatacentre(Datacentre datacentre) {
+        this.datacentre = datacentre;
+    }
+
+	public String getUrl() {
+        return this.url;
+    }
+
+	public void setUrl(String url) {
+        this.url = url;
+    }
+
+	public Date getCreated() {
+        return this.created;
+    }
+
+	public void setCreated(Date created) {
+        this.created = created;
+    }
+
+	public Date getUpdated() {
+        return this.updated;
+    }
+
+	public void setUpdated(Date updated) {
+        this.updated = updated;
+    }
+
+	public Date getMinted() {
+        return this.minted;
+    }
+
+	public void setMinted(Date minted) {
+        this.minted = minted;
+    }
+
+	@PersistenceContext
+    transient EntityManager entityManager;
+
+	@Id
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(name = "id")
+    private Long id;
+
+	@Version
+    @Column(name = "version")
+    private Integer version;
+
+	public Long getId() {
+        return this.id;
+    }
+
+	public void setId(Long id) {
+        this.id = id;
+    }
+
+	public Integer getVersion() {
+        return this.version;
+    }
+
+	public void setVersion(Integer version) {
+        this.version = version;
+    }
+
+	@Transactional
+    public void remove() {
+        if (this.entityManager == null) this.entityManager = entityManager();
+        if (this.entityManager.contains(this)) {
+            this.entityManager.remove(this);
+        } else {
+            Dataset attached = Dataset.findDataset(this.id);
+            this.entityManager.remove(attached);
+        }
+    }
+
+	@Transactional
+    public void flush() {
+        if (this.entityManager == null) this.entityManager = entityManager();
+        this.entityManager.flush();
+    }
+
+	@Transactional
+    public void clear() {
+        if (this.entityManager == null) this.entityManager = entityManager();
+        this.entityManager.clear();
+    }
+
+	public static final EntityManager entityManager() {
+        EntityManager em = new Dataset().entityManager;
+        if (em == null) throw new IllegalStateException("Entity manager has not been injected (is the Spring Aspects JAR configured as an AJC/AJDT aspects library?)");
+        return em;
+    }
+
+	public static long countDatasets() {
+        return entityManager().createQuery("SELECT COUNT(o) FROM Dataset o", Long.class).getSingleResult();
+    }
+
+	public static List<Dataset> findAllDatasets() {
+        return entityManager().createQuery("SELECT o FROM Dataset o", Dataset.class).getResultList();
+    }
+
+	public static Dataset findDataset(Long id) {
+        if (id == null) return null;
+        return entityManager().find(Dataset.class, id);
+    }
+
+	public static List<Dataset> findDatasetEntries(int firstResult, int maxResults) {
+        return entityManager().createQuery("SELECT o FROM Dataset o", Dataset.class).setFirstResult(firstResult).setMaxResults(maxResults).getResultList();
+    }
+
+	public static TypedQuery<Dataset> findDatasetsByDoiEquals(String doi) {
+        if (doi == null || doi.length() == 0) throw new IllegalArgumentException("The doi argument is required");
+        EntityManager em = Dataset.entityManager();
+        TypedQuery<Dataset> q = em.createQuery("SELECT o FROM Dataset AS o WHERE o.doi = :doi", Dataset.class);
+        q.setParameter("doi", doi);
+        return q;
+    }
 }

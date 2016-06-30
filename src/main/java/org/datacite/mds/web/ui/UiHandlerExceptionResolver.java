@@ -5,6 +5,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.log4j.Logger;
 import org.datacite.mds.service.SecurityException;
+import org.datacite.mds.web.AbstractHandlerExceptionResolver;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.ModelAndView;
 import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolver;
@@ -18,15 +19,14 @@ import org.springframework.web.servlet.mvc.support.DefaultHandlerExceptionResolv
  * @see DefaultHandlerExceptionResolver
  */
 @Component
-public class UiHandlerExceptionResolver extends DefaultHandlerExceptionResolver {
+public class UiHandlerExceptionResolver extends AbstractHandlerExceptionResolver {
     
     Logger log = Logger.getLogger(UiHandlerExceptionResolver.class);
 
     public UiHandlerExceptionResolver() {
         super();
         setOrder(HIGHEST_PRECEDENCE); // ensure this resolver is fired first
-        Class<?>[] handlers = { UiController.class,  };
-        setMappedHandlerClasses(handlers); // use our UI controller classes
+        handlersClasses = new Class<?>[] { UiController.class };
     }
 
     @Override

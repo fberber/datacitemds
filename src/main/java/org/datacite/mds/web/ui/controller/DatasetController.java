@@ -1,13 +1,13 @@
 package org.datacite.mds.web.ui.controller;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-
+import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import javax.validation.ValidationException;
-
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -28,7 +28,6 @@ import org.datacite.mds.web.ui.UiController;
 import org.datacite.mds.web.ui.model.CreateDatasetModel;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.roo.addon.web.mvc.controller.RooWebScaffold;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -42,8 +41,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.support.ByteArrayMultipartFileEditor;
+import org.springframework.web.util.UriUtils;
+import org.springframework.web.util.WebUtils;
 
-@RooWebScaffold(path = "datasets", formBackingObject = Dataset.class, delete = false, populateMethods = false)
 @RequestMapping("/datasets")
 @Controller
 public class DatasetController implements UiController {
@@ -267,5 +267,22 @@ public class DatasetController implements UiController {
         model.addAttribute("dataset", dataset);
         model.addAttribute("resolvedUrl", resolveDoi(dataset));
         return "datasets/update";
+    }
+
+	String encodeUrlPathSegment(String pathSegment, HttpServletRequest httpServletRequest) {
+        String enc = httpServletRequest.getCharacterEncoding();
+        if (enc == null) {
+            enc = WebUtils.DEFAULT_CHARACTER_ENCODING;
+        }
+        try {
+            pathSegment = UriUtils.encodePathSegment(pathSegment, enc);
+        }
+        catch (UnsupportedEncodingException uee) {}
+        return pathSegment;
+    }
+
+	@RequestMapping(params = { "find=ByDoiEquals", "form" }, method = RequestMethod.GET)
+    public String findDatasetsByDoiEqualsForm(Model uiModel) {
+        return "datasets/findDatasetsByDoiEquals";
     }
 }

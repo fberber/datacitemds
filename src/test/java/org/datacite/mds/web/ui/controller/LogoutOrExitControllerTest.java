@@ -18,6 +18,9 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration("/META-INF/spring/applicationContext.xml")
 @Transactional
@@ -43,8 +46,9 @@ public class LogoutOrExitControllerTest {
     @Test
     public void testSwitchedUser() {
         Authentication origAuthentication = new TestingAuthenticationToken("foo", "bar");
-        GrantedAuthority[] swichUserAuthority = { new SwitchUserGrantedAuthority("foobar", origAuthentication) };
-        
+
+        List<GrantedAuthority> swichUserAuthority = new ArrayList<GrantedAuthority>();
+        swichUserAuthority.add(new SwitchUserGrantedAuthority("foobar", origAuthentication));
         Authentication switchedAuthentication = new TestingAuthenticationToken("foo", "bar", swichUserAuthority);
         SecurityContextHolder.getContext().setAuthentication(switchedAuthentication);
         

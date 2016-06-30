@@ -1,12 +1,12 @@
 package org.datacite.mds.web.ui.controller;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.validation.Valid;
-
 import org.apache.commons.collections.ListUtils;
 import org.apache.commons.lang.BooleanUtils;
 import org.datacite.mds.domain.Allocator;
@@ -19,7 +19,6 @@ import org.datacite.mds.util.Constants;
 import org.datacite.mds.web.ui.UiController;
 import org.datacite.mds.web.ui.UiUtils;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.roo.addon.web.mvc.controller.RooWebScaffold;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -28,8 +27,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.util.UriUtils;
+import org.springframework.web.util.WebUtils;
 
-@RooWebScaffold(path = "allocators", formBackingObject = Allocator.class, delete = false, populateMethods = false)
 @RequestMapping("/allocators")
 @Controller
 public class AllocatorController implements UiController {
@@ -143,5 +143,33 @@ public class AllocatorController implements UiController {
     @ModelAttribute("experiments")
     public Collection<String> populateExperiments() {
         return Constants.EXPERIMENTS_AVAILABLE;
+    }
+
+	String encodeUrlPathSegment(String pathSegment, HttpServletRequest httpServletRequest) {
+        String enc = httpServletRequest.getCharacterEncoding();
+        if (enc == null) {
+            enc = WebUtils.DEFAULT_CHARACTER_ENCODING;
+        }
+        try {
+            pathSegment = UriUtils.encodePathSegment(pathSegment, enc);
+        }
+        catch (UnsupportedEncodingException uee) {}
+        return pathSegment;
+    }
+
+	@RequestMapping(params = { "find=ByNameLike", "form" }, method = RequestMethod.GET)
+    public String findAllocatorsByNameLikeForm(Model uiModel) {
+        return "allocators/findAllocatorsByNameLike";
+    }
+
+	@RequestMapping(params = "find=ByNameLike", method = RequestMethod.GET)
+    public String findAllocatorsByNameLike(@RequestParam("name") String name, Model uiModel) {
+        uiModel.addAttribute("allocators", Allocator.findAllocatorsByNameLike(name).getResultList());
+        return "allocators/list";
+    }
+
+	@RequestMapping(params = { "find=BySymbolEquals", "form" }, method = RequestMethod.GET)
+    public String findAllocatorsBySymbolEqualsForm(Model uiModel) {
+        return "allocators/findAllocatorsBySymbolEquals";
     }
 }
